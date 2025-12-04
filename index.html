@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Generator</title>
+    
+    <!-- Tailwind CSS for modern styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- QRCode.js Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    
+    <!-- Phosphor Icons for UI elements -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <style>
+        /* Custom styles to smooth out transitions */
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+
+        .tab-btn.active {
+            background-color: #2563eb; /* blue-600 */
+            color: white;
+            border-color: #2563eb;
+        }
+
+        /* Hide scrollbar for tab navigation */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* QR container styling to ensure image is centered */
+        #qrcode img, #qrcode canvas {
+            margin: auto;
+            border: 8px solid white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-slate-100 to-slate-200 min-h-screen font-sans text-slate-800 p-4 flex items-center justify-center">
+
+    <main class="w-full max-w-lg bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-100">
+        
+        <!-- Header -->
+        <header class="bg-slate-900 text-white p-6 text-center relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500"></div>
+            <i class="ph ph-qr-code text-5xl mb-2 text-blue-400"></i>
+            <h1 class="text-2xl font-bold">QR Generator</h1>
+            <p class="text-slate-400 text-sm">Create QR codes for Links, WiFi, Contacts & more</p>
+        </header>
+
+        <!-- Tab Navigation (Scrollable) -->
+        <div class="border-b border-slate-200 bg-slate-50">
+            <div class="flex overflow-x-auto no-scrollbar py-2 px-1 gap-1">
+                <button onclick="switchTab('url')" id="tab-url" class="tab-btn active flex-none px-6 py-2 rounded-full font-medium text-sm text-slate-600 hover:text-blue-600 transition-colors flex items-center justify-center gap-2 whitespace-nowrap">
+                    <i class="ph ph-link text-lg"></i> URL
+                </button>
+                <button onclick="switchTab('contact')" id="tab-contact" class="tab-btn flex-none px-6 py-2 rounded-full font-medium text-sm text-slate-600 hover:text-blue-600 transition-colors flex items-center justify-center gap-2 whitespace-nowrap">
+                    <i class="ph ph-user text-lg"></i> Contact
+                </button>
+                <button onclick="switchTab('wifi')" id="tab-wifi" class="tab-btn flex-none px-6 py-2 rounded-full font-medium text-sm text-slate-600 hover:text-blue-600 transition-colors flex items-center justify-center gap-2 whitespace-nowrap">
+                    <i class="ph ph-wifi-high text-lg"></i> WiFi
+                </button>
+                <button onclick="switchTab('email')" id="tab-email" class="tab-btn flex-none px-6 py-2 rounded-full font-medium text-sm text-slate-600 hover:text-blue-600 transition-colors flex items-center justify-center gap-2 whitespace-nowrap">
+                    <i class="ph ph-envelope text-lg"></i> Email
+                </button>
+            </div>
+        </div>
+
+        <div class="p-6">
+            
+            <!-- Error Message Container -->
+            <div id="error-msg" class="hidden mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-lg border border-red-100 flex items-center gap-2">
+                <i class="ph ph-warning-circle"></i> <span>Please fill in all fields.</span>
+            </div>
+
+            <!-- URL Input Form -->
+            <div id="content-url" class="tab-content active space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Website URL</label>
+                    <div class="relative">
+                        <i class="ph ph-globe absolute left-3 top-3 text-slate-400 text-lg"></i>
+                        <input type="url" id="url-input" placeholder="https://example.com" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contact Input Form (vCard) -->
+            <div id="content-contact" class="tab-content space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">First Name</label>
+                        <input type="text" id="contact-first" placeholder="John" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Last Name</label>
+                        <input type="text" id="contact-last" placeholder="Doe" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Phone Number</label>
+                    <input type="tel" id="contact-phone" placeholder="+1 234 567 890" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Email</label>
+                    <input type="email" id="contact-email" placeholder="john@example.com" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Company</label>
+                        <input type="text" id="contact-org" placeholder="Acme Inc" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Title</label>
+                        <input type="text" id="contact-title" placeholder="Manager" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Email Input Form -->
+            <div id="content-email" class="tab-content space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Email Address</label>
+                    <div class="relative">
+                        <i class="ph ph-envelope absolute left-3 top-3 text-slate-400 text-lg"></i>
+                        <input type="email" id="email-addr" placeholder="recipient@example.com" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Subject</label>
+                    <input type="text" id="email-subject" placeholder="Meeting Request" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Message Body</label>
+                    <textarea id="email-body" rows="3" placeholder="Hello..." class="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all resize-none"></textarea>
+                </div>
+            </div>
+
+            <!-- WiFi Input Form -->
+            <div id="content-wifi" class="tab-content space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Network Name (SSID)</label>
+                    <div class="relative">
+                        <i class="ph ph-wifi-high absolute left-3 top-3 text-slate-400 text-lg"></i>
+                        <input type="text" id="wifi-ssid" placeholder="MyHomeNetwork" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Security</label>
+                        <div class="relative">
+                            <i class="ph ph-shield-check absolute left-3 top-3 text-slate-400 text-lg"></i>
+                            <select id="wifi-type" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all appearance-none">
+                                <option value="WPA">WPA/WPA2</option>
+                                <option value="WEP">WEP</option>
+                                <option value="nopass">None</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Password</label>
+                        <div class="relative">
+                            <i class="ph ph-key absolute left-3 top-3 text-slate-400 text-lg"></i>
+                            <input type="text" id="wifi-pass" placeholder="Password123" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                        </div>
+                    </div>
+                </div>
+                <p class="text-xs text-slate-400 italic">Scanning this code will prompt compatible devices to join the network automatically.</p>
+            </div>
+
+            <!-- Plain Text Form -->
+            <div id="content-text" class="tab-content space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Plain Text</label>
+                    <textarea id="text-input" rows="4" placeholder="Enter any text, email body, or message here..." class="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all resize-none"></textarea>
+                </div>
+            </div>
+
+            <!-- Generate Button -->
+            <button onclick="generateQR()" class="w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 shadow-md hover:shadow-lg active:scale-95 transform transition-transform">
+                <i class="ph ph-lightning text-xl"></i> Generate QR Code
+            </button>
+
+            <!-- Result Area -->
+            <div id="result-area" class="hidden mt-8 text-center border-t border-slate-100 pt-6 animate-fade-in">
+                <div class="bg-slate-100 p-4 rounded-xl inline-block mb-4 shadow-inner">
+                    <div id="qrcode" class="flex justify-center"></div>
+                </div>
+                
+                <div class="flex flex-col gap-2 justify-center items-center">
+                    <button onclick="downloadQR()" class="text-slate-600 hover:text-blue-600 font-medium text-sm flex items-center gap-2 px-4 py-2 hover:bg-slate-50 rounded-full transition-colors">
+                        <i class="ph ph-download-simple text-lg"></i> Download PNG
+                    </button>
+                </div>
+            </div>
+
+        </div>
+        
+        <!-- Footer Instructions -->
+        <div class="bg-slate-50 p-4 text-center border-t border-slate-200">
+            <p class="text-xs text-slate-400">
+                <strong>How to use:</strong> Select a type, enter your details, and click Generate. <br>Use your phone's camera app to scan.
+            </p>
+        </div>
+    </main>
+
+    <script>
+        // --- State Management ---
+        let currentMode = 'url';
+        let qrCodeObj = null; // Store the QRCode instance
+
+        // --- Tab Switching Logic ---
+        function switchTab(mode) {
+            currentMode = mode;
+            
+            // Hide all error messages
+            document.getElementById('error-msg').classList.add('hidden');
+            document.getElementById('result-area').classList.add('hidden');
+
+            // Update Tab UI
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`tab-${mode}`).classList.add('active');
+
+            // Update Content UI
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            document.getElementById(`content-${mode}`).classList.add('active');
+        }
+
+        // --- Generator Logic ---
+        function generateQR() {
+            const errorMsg = document.getElementById('error-msg');
+            const resultArea = document.getElementById('result-area');
+            const qrContainer = document.getElementById('qrcode');
+            
+            let qrText = '';
+
+            // 1. Gather Data based on Mode
+            if (currentMode === 'url') {
+                const url = document.getElementById('url-input').value.trim();
+                if (!url) return showError('Please enter a valid URL.');
+                qrText = url;
+            } 
+            else if (currentMode === 'contact') {
+                const fn = document.getElementById('contact-first').value.trim();
+                const ln = document.getElementById('contact-last').value.trim();
+                const phone = document.getElementById('contact-phone').value.trim();
+                const email = document.getElementById('contact-email').value.trim();
+                const org = document.getElementById('contact-org').value.trim();
+                const title = document.getElementById('contact-title').value.trim();
+                
+                if (!fn && !ln && !org) return showError('Please enter at least a name or company.');
+
+                // vCard 3.0 Format
+                qrText = `BEGIN:VCARD\nVERSION:3.0\nN:${ln};${fn};;;\nFN:${fn} ${ln}\nORG:${org}\nTITLE:${title}\nTEL;TYPE=CELL:${phone}\nEMAIL:${email}\nEND:VCARD`;
+            }
+            else if (currentMode === 'email') {
+                const addr = document.getElementById('email-addr').value.trim();
+                const sub = document.getElementById('email-subject').value.trim();
+                const body = document.getElementById('email-body').value.trim();
+                
+                if (!addr) return showError('Email address is required.');
+                // mailto:addr?subject=...&body=...
+                qrText = `mailto:${addr}?subject=${encodeURIComponent(sub)}&body=${encodeURIComponent(body)}`;
+            }
+            else if (currentMode === 'wifi') {
+                const ssid = document.getElementById('wifi-ssid').value.trim();
+                const type = document.getElementById('wifi-type').value;
+                const pass = document.getElementById('wifi-pass').value.trim();
+                
+                if (!ssid) return showError('Network SSID is required.');
+                if (type !== 'nopass' && !pass) return showError('Password is required for secure networks.');
+
+                qrText = `WIFI:S:${ssid};T:${type};P:${pass};;`;
+            } 
+
+            // 2. Clear previous errors and QR
+            errorMsg.classList.add('hidden');
+            qrContainer.innerHTML = ''; // Clear container
+
+            // 3. Generate new QR
+            setTimeout(() => {
+                qrCodeObj = new QRCode(qrContainer, {
+                    text: qrText,
+                    width: 200,
+                    height: 200,
+                    colorDark : "#000000",
+                    colorLight : "#ffffff",
+                    correctLevel : QRCode.CorrectLevel.H
+                });
+                
+                // Show result
+                resultArea.classList.remove('hidden');
+            }, 50);
+        }
+
+        // --- Helper: Show Error ---
+        function showError(msg) {
+            const el = document.getElementById('error-msg');
+            el.querySelector('span').textContent = msg;
+            el.classList.remove('hidden');
+        }
+
+        // --- Download Logic ---
+        function downloadQR() {
+            const qrContainer = document.getElementById('qrcode');
+            const img = qrContainer.querySelector('img');
+
+            if (img && img.src) {
+                const link = document.createElement('a');
+                link.href = img.src;
+                link.download = `qrcode-${currentMode}-${Date.now()}.png`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            } else {
+                const canvas = qrContainer.querySelector('canvas');
+                if(canvas) {
+                    const link = document.createElement('a');
+                    link.href = canvas.toDataURL("image/png");
+                    link.download = `qrcode-${currentMode}-${Date.now()}.png`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                } else {
+                    alert("QR Code not ready yet. Please try again.");
+                }
+            }
+        }
+    </script>
+</body>
+</html>
