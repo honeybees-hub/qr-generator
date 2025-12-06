@@ -1,1 +1,3 @@
-# qr-generator
+# Qr-generator
+
+This website functions as a versatile QR Code Generator. It enables users to effortlessly create QR codes for a variety of data types, including website URLs, detailed contact information (utilizing the vCard format), pre-filled email messages, and Wi-Fi network credentials. The user interface is built with Tailwind CSS for a modern aesthetic, and it leverages the  library for efficient QR code generation. Additionally, Phosphor Icons are integrated to enhance the visual elements of the UI. The application features an intuitive tabbed navigation system that allows users to seamlessly switch between different QR code generation modes. Each mode presents a dedicated input form for relevant data, followed by a "Generate QR Code" button. Upon generation, the QR code is displayed in a dedicated area, providing an option for the user to download it as a PNG image.
